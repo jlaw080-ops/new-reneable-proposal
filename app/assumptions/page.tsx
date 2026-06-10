@@ -122,7 +122,11 @@ export default function AssumptionsPage() {
         <p className="mb-3 text-xs text-gray-500">
           용도를 추가하고 면적을 입력하면 총 에너지사용량(= 면적 × 단위면적당 에너지사용량)과
           전기비용(= 총 에너지사용량 × 전기비용 단가)이 자동 산출됩니다. 체크된 용도만 평가
-          베이스라인에 합산됩니다.
+          베이스라인에 합산됩니다. 용도별 단위면적당 에너지사용량 값은{" "}
+          <a href="/usage" className="text-blue-600 underline">
+            용도 관리
+          </a>{" "}
+          화면에서 편집합니다.
         </p>
 
         <label className="flex max-w-xs flex-col text-xs text-gray-600">

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS: { href: string; label: string }[] = [
   { href: "/matrix", label: "시나리오 매트릭스" },
   { href: "/products", label: "제품 관리" },
+  { href: "/usage", label: "용도 관리" },
   { href: "/assumptions", label: "가정값" },
   { href: "/sensitivity", label: "민감도" },
   { href: "/cases", label: "케이스 비교" },

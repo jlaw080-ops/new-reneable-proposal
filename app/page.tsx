@@ -3,6 +3,7 @@ import Link from "next/link";
 const CARDS = [
   { href: "/matrix", title: "시나리오 매트릭스", desc: "기수×용량 히트맵, 지표 토글, 셀 분해 워터폴" },
   { href: "/products", title: "제품 관리", desc: "연료전지 제품 마스터 CRUD·복제·JSON 가져오기/내보내기" },
+  { href: "/usage", title: "용도 관리", desc: "용도별 단위면적당 에너지사용량 테이블 CRUD·JSON 가져오기/내보내기" },
   { href: "/assumptions", title: "가정값", desc: "단가·태양광·프로젝트 가정 편집" },
   { href: "/sensitivity", title: "민감도", desc: "열사용비율 슬라이더, 2D 민감도" },
   { href: "/cases", title: "케이스 비교", desc: "최대 4케이스 NPV/IRR/회수기간 비교" },
