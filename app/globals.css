@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+}
+
+/* A4 인쇄 레이아웃 (§F6, @media print) */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-page {
+    page-break-after: always;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
+
+/* 매트릭스 셀 공통 */
+.matrix-cell {
+  @apply px-2 py-1 text-right text-xs tabular-nums border border-gray-200;
+}
