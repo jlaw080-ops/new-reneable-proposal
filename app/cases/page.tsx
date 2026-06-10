@@ -26,7 +26,6 @@ interface CaseDef {
   fcUnits: number;
   pvCapacityKw: number;
   heatUseRatio: number;
-  includeOfficetel: boolean;
   discountRate: number;
 }
 
@@ -39,7 +38,6 @@ function newCase(productId: string, label: string): CaseDef {
     fcUnits: 15,
     pvCapacityKw: 2000,
     heatUseRatio: 0.45,
-    includeOfficetel: false,
     discountRate: 0.045,
   };
 }
@@ -67,7 +65,7 @@ export default function CasesPage() {
           fcUnits: c.fcUnits,
           pvCapacityKw: c.pvCapacityKw,
           heatUseRatio: c.heatUseRatio,
-          includeOfficetel: c.includeOfficetel,
+          includeOfficetel: false,
           includeHeatSaving: true,
         },
         ctx,
@@ -148,10 +146,6 @@ export default function CasesPage() {
                   <input type="range" min={0} max={0.15} step={0.005} value={c.discountRate} onChange={(e) => update(c.id, { discountRate: Number(e.target.value) })} className="mt-1" />
                 </label>
               </div>
-              <label className="flex items-center gap-2 text-xs text-gray-700">
-                <input type="checkbox" checked={c.includeOfficetel} onChange={(e) => update(c.id, { includeOfficetel: e.target.checked })} />
-                오피스텔 포함
-              </label>
             </div>
           </div>
         ))}

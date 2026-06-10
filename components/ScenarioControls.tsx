@@ -65,15 +65,6 @@ export function ScenarioControls({ showBaseCase = false }: { showBaseCase?: bool
         열절감 포함
       </label>
 
-      <label className="flex items-center gap-2 text-sm text-gray-700">
-        <input
-          type="checkbox"
-          checked={s.includeOfficetel}
-          onChange={(e) => s.setIncludeOfficetel(e.target.checked)}
-        />
-        오피스텔 포함
-      </label>
-
       {showBaseCase && (
         <div className="flex items-end gap-2">
           <label className="flex flex-col text-xs text-gray-600">

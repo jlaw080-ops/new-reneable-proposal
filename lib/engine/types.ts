@@ -42,15 +42,24 @@ export interface BuildingUsageTable {
 }
 
 /**
- * 프로젝트 가정 — 용도 선택 + 면적 입력 기반 (사용자 요구 반영).
- * 오피스/오피스텔 각각 용도와 면적을 입력하면 총 에너지사용량과 전기비용이 파생된다.
+ * 프로젝트 용도 세그먼트 — 용도 + 면적 + 평가 포함 여부.
+ * 사용자가 여러 용도를 자유롭게 추가/삭제하고, 체크박스로 베이스라인 포함 여부를 정한다.
+ */
+export interface UsageSegment {
+  id: string;
+  label: string; // 사용자 라벨 (예: 오피스, 상가동)
+  usageType: string; // 용도 (building-usage 테이블 참조)
+  areaM2: number; // 면적(㎡)
+  included: boolean; // 평가(베이스라인) 포함 여부
+}
+
+/**
+ * 프로젝트 가정 — 용도 세그먼트 목록 기반 (사용자 요구 반영).
+ * 포함(included) 세그먼트들의 총 에너지사용량·전기비용이 베이스라인이 된다.
  */
 export interface ProjectProfile {
   name: string;
-  officeUsageType: string; // 용도
-  officeAreaM2: number; // 면적(㎡)
-  officetelUsageType: string;
-  officetelAreaM2: number;
+  segments: UsageSegment[];
 }
 
 /** 태양광 가정 (§4.3). */

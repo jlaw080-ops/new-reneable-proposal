@@ -23,7 +23,7 @@ export default function ReportPage() {
             fcUnits: scenario.baseFcUnits,
             pvCapacityKw: scenario.basePvCapacityKw,
             heatUseRatio: scenario.heatUseRatio,
-            includeOfficetel: scenario.includeOfficetel,
+            includeOfficetel: false, // 오피스/오피스텔 구분 폐지 — 프로젝트 세그먼트로 결정
             includeHeatSaving: scenario.includeHeatSaving,
             utilization: scenario.utilization,
           }
@@ -76,12 +76,16 @@ export default function ReportPage() {
               <RowKV k="태양광 용량" v={`${formatNumber(baseInput.pvCapacityKw)} kW (설치면적 ${formatNumber(baseInput.pvCapacityKw * 5)}㎡)`} />
               <RowKV k="열사용비율 / 이용률" v={`${formatPercent(baseInput.heatUseRatio)} / ${formatPercent(baseInput.utilization ?? 1)}`} />
               <RowKV
-                k="대상 건물 용도 / 면적"
-                v={`오피스 ${project.officeUsageType} ${formatNumber(project.officeAreaM2)}㎡${
-                  baseInput.includeOfficetel ? ` + 오피스텔 ${project.officetelUsageType} ${formatNumber(project.officetelAreaM2)}㎡` : ""
-                }`}
+                k="대상 건물 용도 / 면적 (평가 포함)"
+                v={
+                  project.segments.filter((s) => s.included).length === 0
+                    ? "없음"
+                    : project.segments
+                        .filter((s) => s.included)
+                        .map((s) => `${s.label}(${s.usageType}) ${formatNumber(s.areaM2)}㎡`)
+                        .join(" + ")
+                }
               />
-              <RowKV k="오피스텔 포함 여부" v={baseInput.includeOfficetel ? "포함" : "미포함"} />
             </tbody>
           </table>
         </section>

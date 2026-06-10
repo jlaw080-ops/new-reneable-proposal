@@ -1,7 +1,19 @@
 {
   "name": "고양창릉",
-  "officeUsageType": "업무",
-  "officeAreaM2": 20448.898978671645,
-  "officetelUsageType": "업무",
-  "officetelAreaM2": 6800.047536158939
+  "segments": [
+    {
+      "id": "seg-office",
+      "label": "오피스",
+      "usageType": "업무",
+      "areaM2": 20448.898978671645,
+      "included": true
+    },
+    {
+      "id": "seg-officetel",
+      "label": "오피스텔",
+      "usageType": "업무",
+      "areaM2": 6800.047536158939,
+      "included": false
+    }
+  ]
 }

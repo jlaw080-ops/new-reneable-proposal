@@ -6,7 +6,6 @@ import { persist } from "zustand/middleware";
 
 export interface ScenarioState {
   heatUseRatio: number; // 0~1
-  includeOfficetel: boolean;
   includeHeatSaving: boolean;
   utilization: number; // 연료전지 이용률 (기본 1.0, §10-4)
   /** 기준 Case 강조용 (매트릭스 주황 테두리). */
@@ -14,7 +13,6 @@ export interface ScenarioState {
   basePvCapacityKw: number;
 
   setHeatUseRatio: (v: number) => void;
-  setIncludeOfficetel: (v: boolean) => void;
   setIncludeHeatSaving: (v: boolean) => void;
   setUtilization: (v: number) => void;
   setBaseCase: (fc: number, pv: number) => void;
@@ -24,19 +22,17 @@ export const useScenarioStore = create<ScenarioState>()(
   persist(
     (set) => ({
       heatUseRatio: 0.45,
-      includeOfficetel: false,
       includeHeatSaving: true,
       utilization: 1,
       baseFcUnits: 1,
       basePvCapacityKw: 600,
 
       setHeatUseRatio: (heatUseRatio) => set({ heatUseRatio }),
-      setIncludeOfficetel: (includeOfficetel) => set({ includeOfficetel }),
       setIncludeHeatSaving: (includeHeatSaving) => set({ includeHeatSaving }),
       setUtilization: (utilization) => set({ utilization }),
       setBaseCase: (baseFcUnits, basePvCapacityKw) =>
         set({ baseFcUnits, basePvCapacityKw }),
     }),
-    { name: "renewable-scenario-store-v1" },
+    { name: "renewable-scenario-store-v2" },
   ),
 );

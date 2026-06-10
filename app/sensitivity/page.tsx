@@ -37,11 +37,11 @@ export default function SensitivityPage() {
       fcUnits: fc,
       pvCapacityKw: pv,
       heatUseRatio: scenario.heatUseRatio,
-      includeOfficetel: scenario.includeOfficetel,
+      includeOfficetel: false, // 오피스/오피스텔 구분 폐지
       includeHeatSaving: true,
       utilization: scenario.utilization,
     }),
-    [fc, pv, scenario.heatUseRatio, scenario.includeOfficetel, scenario.utilization],
+    [fc, pv, scenario.heatUseRatio, scenario.utilization],
   );
 
   const lineData = useMemo(() => {

@@ -63,11 +63,11 @@ export default function MatrixPage() {
       fcUnits: 0,
       pvCapacityKw: 0,
       heatUseRatio: scenario.heatUseRatio,
-      includeOfficetel: scenario.includeOfficetel,
+      includeOfficetel: false, // 오피스/오피스텔 구분 폐지 — 베이스라인은 프로젝트 세그먼트로 결정
       includeHeatSaving: scenario.includeHeatSaving,
       utilization: scenario.utilization,
     }),
-    [scenario.heatUseRatio, scenario.includeOfficetel, scenario.includeHeatSaving, scenario.utilization],
+    [scenario.heatUseRatio, scenario.includeHeatSaving, scenario.utilization],
   );
 
   const matrix = useMemo(
