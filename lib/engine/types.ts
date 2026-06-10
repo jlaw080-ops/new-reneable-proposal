@@ -18,14 +18,54 @@ export interface FuelCellProduct {
   needsReview?: string[]; // 검증 필요 필드 표시
 }
 
-/** 에너지 단가 (§4.2). */
+/** 계절별 부하구간 단가(₩/kWh). low(경부하)는 선택 — 연료전지는 중간·최대부하만 운전. */
+export interface SeasonalLoadRate {
+  low?: number;
+  mid: number;
+  peak: number;
+}
+
+/** 전기 단가 (요금조건 시트, §2). */
+export interface ElectricityTariff {
+  basicChargeKrwPerKw: number; // 월 기본료(₩/kW)
+  vatFundFactor: number; // 부가세10%×전력기금≈3.2% = 1.137 (리터럴 상수)
+  seasonalLoadRateKrwPerKwh: {
+    summer: SeasonalLoadRate;
+    spring_fall: SeasonalLoadRate;
+    winter: SeasonalLoadRate;
+  };
+  source?: string;
+}
+
+/** 가스 단가 (요금조건 시트, §2). */
+export interface GasTariff {
+  wholesaleKrwPerNm3: number;
+  kwToNm3Factor: number; // kW→Nm³ 환산
+  vatFactor: number;
+  source?: string;
+}
+
+/** 열 단가 (요금조건 시트, §2). */
+export interface HeatTariff {
+  retailKrwPerNm3: number;
+  maxCalorificValue: number; // 최대열량
+  wholesaleRetailRatio: number; // 도소매 비율
+  mcalFactor: number; // kWh→Mcal (860/1000=0.86)
+  vatFactor: number;
+  source?: string;
+}
+
+/**
+ * 에너지 단가 (§2 — 계절·부하별 월간 누적 매트릭스).
+ * elecCostKrwPerKwh 는 건물 베이스라인 전기비용 단가(용도·면적 기반 프로젝트 가정용)로 유지.
+ */
 export interface Tariffs {
-  elecSavingKrwPerKwh: number;
-  /** 건물 전기비용 단가 — 에너지사용량(kWh)을 전기비용(₩)으로 환산. */
+  electricity: ElectricityTariff;
+  gas: GasTariff;
+  heat: HeatTariff;
+  /** 건물 베이스라인 전기비용 단가(에너지사용량→전기비용). 프로젝트 baseline 산출용. */
   elecCostKrwPerKwh: number;
-  gasCostKrwPerKwh: number;
-  heatSavingKrwPerKwh: number;
-  note?: string;
+  buildingBaselineSource?: string;
 }
 
 /** 용도별 단위면적당 에너지사용량 한 행. */
@@ -96,21 +136,51 @@ export interface ScenarioInput {
   capexOverridePerUnit?: number;
 }
 
+/**
+ * 연료전지 운전조건 (§4.1). 제품 마스터에 없는 운전시간 입력값.
+ * 원본 셀 E21/E22 = 중간부하 18h + 최대부하 6h (합 24h). 프로젝트별 조정 가능.
+ */
+export interface OperatingHours {
+  midLoadHours: number; // 일일 중간부하 운전시간 (기본 18)
+  peakLoadHours: number; // 일일 최대부하 운전시간 (기본 6)
+}
+
+/** 운전조건 기본값 (§4.1, §6-5). */
+export const DEFAULT_OPERATING_HOURS: OperatingHours = {
+  midLoadHours: 18,
+  peakLoadHours: 6,
+};
+
 /** 전 계산에 필요한 가정값 묶음. */
 export interface EngineContext {
   tariffs: Tariffs;
   pv: PvProfile;
   project: Project;
-  /** 연간 가동시간 H (기본 8760, §5). */
-  hoursPerYear?: number;
+  /** 연료전지 운전조건(중간/최대부하 시간). 미지정 시 18/6 기본값. */
+  operatingHours?: OperatingHours;
 }
 
-/** 제품 1기당 파생 경제성 (§5). */
+/** 제품 1기당 월별 파생 내역 (§4.2). 골든 테스트·디버깅용. */
+export interface MonthlyDerived {
+  month: number; // 1~12
+  days: number;
+  season: "summer" | "spring_fall" | "winter";
+  basicCharge: number; // 월 기본료 (D열)
+  midGen: number; // 중간부하 생산량 (F열)
+  peakGen: number; // 최대부하 생산량 (H열)
+  elecSaving: number; // 전기 절감 (J열)
+  heatMcal: number; // 열량 Mcal (L열, 열사용율 1.0)
+  heatSaving100: number; // 열 절감 (N열, 열사용율 1.0)
+  gasNm3: number; // 가스 사용량 Nm³ (F열)
+  gasCost: number; // 가스 비용 (N열)
+}
+
+/** 제품 1기당 파생 경제성 (§4.3). 공개 인터페이스는 §6 호환을 위해 유지. */
 export interface DerivedPerUnit {
   generationPerUnit: number; // kWh/기·년
-  elecSavingPerUnit: number; // ₩
-  heatSavingAt100: number; // ₩ (열사용비율 100% 기준)
-  gasCostPerUnit: number; // ₩
+  elecSavingPerUnit: number; // ₩ (Σ 월별 elecSaving)
+  heatSavingAt100: number; // ₩ (열사용비율 100% 기준, Σ 월별 heatSaving100)
+  gasCostPerUnit: number; // ₩ (Σ 월별 gasCost)
   maintenancePerUnit: number | null; // ₩ (null 가드 필요)
   capexPerUnit: number | null; // ₩ (null 가드 필요)
 }

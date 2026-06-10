@@ -1,7 +1,28 @@
 {
-  "elecSavingKrwPerKwh": 185.0237764,
+  "electricity": {
+    "basicChargeKrwPerKw": 7220,
+    "vatFundFactor": 1.137,
+    "seasonalLoadRateKrwPerKwh": {
+      "summer": { "low": 99.5, "mid": 152.4, "peak": 234.5 },
+      "spring_fall": { "low": 99.5, "mid": 122.0, "peak": 152.7 },
+      "winter": { "low": 106.5, "mid": 152.6, "peak": 210.1 }
+    },
+    "source": "요금조건!B22(기본료), F23/F24(여름), J23/J24(봄가을), N23/N24(겨울). 1.137=부가세10%×전력기금3.2%. low(경부하)는 미사용(연료전지 중간·최대부하만 운전)."
+  },
+  "gas": {
+    "wholesaleKrwPerNm3": 641,
+    "kwToNm3Factor": 0.0973,
+    "vatFactor": 1.1,
+    "source": "요금조건!M9, I16, ×1.1"
+  },
+  "heat": {
+    "retailKrwPerNm3": 848,
+    "maxCalorificValue": 10600,
+    "wholesaleRetailRatio": 0.88,
+    "mcalFactor": 0.86,
+    "vatFactor": 1.1,
+    "source": "요금조건!M12, I15, I17. 860/1000=kWh→Mcal. ×1.1"
+  },
   "elecCostKrwPerKwh": 142.33333333,
-  "gasCostKrwPerKwh": 68.60623,
-  "heatSavingKrwPerKwh": 86.0,
-  "note": "역산 검증값. 원본 '요금조건' 시트 확인 후 갱신 가능. elecCostKrwPerKwh = 건물 전기비용 단가(에너지사용량→전기비용 환산), goyang 333082152.76/2340155.64 = 142.3333."
+  "buildingBaselineSource": "건물 베이스라인 전기비용 단가(에너지사용량→전기비용 환산). 용도·면적 기반 프로젝트 가정용으로 유지. goyang 333082152.76/2340155.64 = 142.3333."
 }

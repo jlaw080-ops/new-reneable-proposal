@@ -5,12 +5,23 @@ import { useHydrated } from "@/lib/useHydrated";
 import {
   segmentDerived,
   sumIncludedSegments,
+  type ElectricityTariff,
+  type GasTariff,
+  type HeatTariff,
   type ProjectProfile,
   type PvProfile,
+  type Season,
+  type SeasonalLoadRate,
   type Tariffs,
   type UsageSegment,
 } from "@/lib/engine";
 import { formatKrw, formatNumber } from "@/lib/format";
+
+const SEASON_LABEL: Record<Season, string> = {
+  summer: "여름(6~8월)",
+  spring_fall: "봄·가을(3~5·9·10월)",
+  winter: "겨울(11·12·1·2월)",
+};
 
 function NumberField({
   label,
@@ -75,6 +86,21 @@ export default function AssumptionsPage() {
 
   const totals = sumIncludedSegments(segments, usageTable, tariffs.elecCostKrwPerKwh);
 
+  // 전기/가스/열 단가 매트릭스 편집 헬퍼 (§2)
+  const el = tariffs.electricity;
+  const gas = tariffs.gas;
+  const heat = tariffs.heat;
+  const upElec = (patch: Partial<ElectricityTariff>) => upT({ electricity: { ...el, ...patch } });
+  const upGas = (patch: Partial<GasTariff>) => upT({ gas: { ...gas, ...patch } });
+  const upHeat = (patch: Partial<HeatTariff>) => upT({ heat: { ...heat, ...patch } });
+  const upSeason = (s: Season, patch: Partial<SeasonalLoadRate>) =>
+    upElec({
+      seasonalLoadRateKrwPerKwh: {
+        ...el.seasonalLoadRateKrwPerKwh,
+        [s]: { ...el.seasonalLoadRateKrwPerKwh[s], ...patch },
+      },
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -88,16 +114,69 @@ export default function AssumptionsPage() {
       </div>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">에너지 단가 (§4.2)</h2>
+        <h2 className="mb-3 font-semibold">에너지 단가 (§2 — 계절·부하별 월간 누적)</h2>
+
+        <h3 className="mb-2 text-sm font-semibold text-gray-700">전기 (요금조건 시트)</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <NumberField label="전기절감 단가(₩/kWh)" value={tariffs.elecSavingKrwPerKwh} onChange={(v) => upT({ elecSavingKrwPerKwh: v })} />
-          <NumberField label="전기비용 단가(₩/kWh)" value={tariffs.elecCostKrwPerKwh} onChange={(v) => upT({ elecCostKrwPerKwh: v })} hint="에너지사용량→전기비용 환산" />
-          <NumberField label="가스비용 단가(₩/kWh)" value={tariffs.gasCostKrwPerKwh} onChange={(v) => upT({ gasCostKrwPerKwh: v })} />
-          <NumberField label="열절감 단가(₩/kWh)" value={tariffs.heatSavingKrwPerKwh} onChange={(v) => upT({ heatSavingKrwPerKwh: v })} />
+          <NumberField label="기본료(₩/kW·월)" value={el.basicChargeKrwPerKw} onChange={(v) => upElec({ basicChargeKrwPerKw: v })} />
+          <NumberField label="부가세·기금 계수" value={el.vatFundFactor} onChange={(v) => upElec({ vatFundFactor: v })} hint="부가세10%×전력기금≈3.2%" />
+          <NumberField label="건물 전기비용 단가(₩/kWh)" value={tariffs.elecCostKrwPerKwh} onChange={(v) => upT({ elecCostKrwPerKwh: v })} hint="에너지사용량→전기비용(베이스라인)" />
         </div>
-        <p className="mt-2 text-[10px] text-amber-600">
-          {/* TODO(§10-1): 원본 '요금조건' 시트 셀 확인 후 정밀값으로 갱신 */}
-          ※ 역산 검증값. 원본 「요금조건」 시트 확인 후 갱신 가능.
+        <div className="mt-3 overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-xs text-gray-700">
+              <tr>
+                <th className="px-3 py-1.5 text-left">계절</th>
+                <th className="px-3 py-1.5 text-right">중간부하(mid, ₩/kWh)</th>
+                <th className="px-3 py-1.5 text-right">최대부하(peak, ₩/kWh)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(["summer", "spring_fall", "winter"] as const).map((s) => (
+                <tr key={s} className="border-t border-gray-100">
+                  <td className="px-3 py-1.5">{SEASON_LABEL[s]}</td>
+                  <td className="px-3 py-1.5 text-right">
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-28 rounded border border-gray-300 px-2 py-1 text-right text-sm tabular-nums"
+                      value={el.seasonalLoadRateKrwPerKwh[s].mid}
+                      onChange={(e) => upSeason(s, { mid: Number(e.target.value) })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5 text-right">
+                    <input
+                      type="number"
+                      step="any"
+                      className="w-28 rounded border border-gray-300 px-2 py-1 text-right text-sm tabular-nums"
+                      value={el.seasonalLoadRateKrwPerKwh[s].peak}
+                      onChange={(e) => upSeason(s, { peak: Number(e.target.value) })}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h3 className="mb-2 mt-5 text-sm font-semibold text-gray-700">가스 (요금조건 시트)</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <NumberField label="도매단가(₩/Nm³)" value={gas.wholesaleKrwPerNm3} onChange={(v) => upGas({ wholesaleKrwPerNm3: v })} />
+          <NumberField label="kW→Nm³ 환산" value={gas.kwToNm3Factor} onChange={(v) => upGas({ kwToNm3Factor: v })} />
+          <NumberField label="부가세 계수" value={gas.vatFactor} onChange={(v) => upGas({ vatFactor: v })} />
+        </div>
+
+        <h3 className="mb-2 mt-5 text-sm font-semibold text-gray-700">열 (요금조건 시트)</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <NumberField label="소매단가(₩/Nm³)" value={heat.retailKrwPerNm3} onChange={(v) => upHeat({ retailKrwPerNm3: v })} />
+          <NumberField label="최대열량" value={heat.maxCalorificValue} onChange={(v) => upHeat({ maxCalorificValue: v })} />
+          <NumberField label="도소매 비율" value={heat.wholesaleRetailRatio} onChange={(v) => upHeat({ wholesaleRetailRatio: v })} />
+          <NumberField label="Mcal 환산(0.86)" value={heat.mcalFactor} onChange={(v) => upHeat({ mcalFactor: v })} />
+          <NumberField label="부가세 계수" value={heat.vatFactor} onChange={(v) => upHeat({ vatFactor: v })} />
+        </div>
+
+        <p className="mt-3 text-[10px] text-amber-600">
+          ※ 원본 「요금조건」 시트 셀 값(부가세 계수 1.137은 리터럴 상수로 분해 금지). 경부하(low) 단가는 연료전지 운전에 미사용.
         </p>
       </section>
 

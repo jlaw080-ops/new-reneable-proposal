@@ -117,8 +117,8 @@ export const useAppStore = create<AppState>()(
       resetAll: () => set({ ...defaults }),
     }),
     {
-      // 프로젝트 모델이 용도 세그먼트 목록 기반으로 바뀌어 저장 스키마 버전 갱신(v3).
-      name: "renewable-economics-store-v3",
+      // 단가(tariffs)가 계절·부하별 매트릭스로 바뀌어 저장 스키마 버전 갱신(v4).
+      name: "renewable-economics-store-v4",
     },
   ),
 );

@@ -94,10 +94,14 @@ export default function ReportPage() {
           <h3 className="mb-2 font-semibold">2. 가정값</h3>
           <table className="w-full text-sm">
             <tbody>
-              <RowKV k="전기절감 단가" v={`${formatNumber(tariffs.elecSavingKrwPerKwh, 4)} ₩/kWh`} />
-              <RowKV k="가스비용 단가" v={`${formatNumber(tariffs.gasCostKrwPerKwh, 4)} ₩/kWh`} />
-              <RowKV k="열절감 단가" v={`${formatNumber(tariffs.heatSavingKrwPerKwh, 2)} ₩/kWh`} />
-              <RowKV k="전기비용 단가" v={`${formatNumber(tariffs.elecCostKrwPerKwh, 4)} ₩/kWh`} />
+              <RowKV k="전기 기본료" v={`${formatNumber(tariffs.electricity.basicChargeKrwPerKw)} ₩/kW·월 (부가세·기금 ×${formatNumber(tariffs.electricity.vatFundFactor, 3)})`} />
+              <RowKV
+                k="전기 부하단가(겨울 mid/peak)"
+                v={`${formatNumber(tariffs.electricity.seasonalLoadRateKrwPerKwh.winter.mid, 1)} / ${formatNumber(tariffs.electricity.seasonalLoadRateKrwPerKwh.winter.peak, 1)} ₩/kWh`}
+              />
+              <RowKV k="가스 도매단가" v={`${formatNumber(tariffs.gas.wholesaleKrwPerNm3)} ₩/Nm³ (×${formatNumber(tariffs.gas.vatFactor, 2)})`} />
+              <RowKV k="열 소매단가" v={`${formatNumber(tariffs.heat.retailKrwPerNm3)} ₩/Nm³ (×${formatNumber(tariffs.heat.vatFactor, 2)})`} />
+              <RowKV k="건물 전기비용 단가" v={`${formatNumber(tariffs.elecCostKrwPerKwh, 4)} ₩/kWh`} />
               <RowKV k="대상 전기비용 기준" v={`${formatKrw(result.baseline)} ₩/년 (사용량 ${formatNumber(result.baselineUsageKwh)} kWh)`} />
               <RowKV k="태양광 전기절감" v={`${formatKrw(pv.elecSavingKrwPerKwYear)} ₩/kW·년`} />
               <RowKV k="태양광 발전량" v={`${formatNumber(pv.generationKwhPerKwYear, 1)} kWh/kW·년`} />
