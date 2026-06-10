@@ -4,22 +4,28 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
+  BuildingUsageTable,
   EngineContext,
   FuelCellProduct,
+  ProjectProfile,
   PvProfile,
-  Project,
   Tariffs,
 } from "./engine";
+import { resolveProject } from "./engine";
 import seedProducts from "@/data/fuel-cell-products.json";
 import seedTariffs from "@/data/tariffs.json";
 import seedPv from "@/data/pv-profile.json";
-import seedGoyang from "@/data/projects/goyang.json";
+import seedProfile from "@/data/projects/goyang-profile.json";
+import seedUsage from "@/data/building-usage.json";
 
 export interface AppState {
   products: FuelCellProduct[];
   tariffs: Tariffs;
   pv: PvProfile;
-  project: Project;
+  /** 용도+면적 기반 프로젝트 가정. */
+  project: ProjectProfile;
+  /** 용도별 단위면적당 에너지사용량 테이블. */
+  usageTable: BuildingUsageTable;
   /** 매트릭스/계산 기준 선택 제품 id. */
   selectedProductId: string;
 
@@ -32,7 +38,8 @@ export interface AppState {
   // 가정값 편집 (F2)
   setTariffs: (t: Tariffs) => void;
   setPv: (pv: PvProfile) => void;
-  setProject: (p: Project) => void;
+  setProject: (p: ProjectProfile) => void;
+  setUsageTable: (t: BuildingUsageTable) => void;
 
   setSelectedProductId: (id: string) => void;
   resetAll: () => void;
@@ -42,7 +49,8 @@ const defaults = {
   products: seedProducts as FuelCellProduct[],
   tariffs: seedTariffs as Tariffs,
   pv: seedPv as PvProfile,
-  project: seedGoyang as Project,
+  project: seedProfile as ProjectProfile,
+  usageTable: seedUsage as BuildingUsageTable,
   selectedProductId: "bumhan-10kw",
 };
 
@@ -103,19 +111,25 @@ export const useAppStore = create<AppState>()(
       setTariffs: (tariffs) => set({ tariffs }),
       setPv: (pv) => set({ pv }),
       setProject: (project) => set({ project }),
+      setUsageTable: (usageTable) => set({ usageTable }),
       setSelectedProductId: (selectedProductId) => set({ selectedProductId }),
 
       resetAll: () => set({ ...defaults }),
     }),
     {
-      name: "renewable-economics-store-v1",
+      // 프로젝트 모델이 용도+면적 기반으로 바뀌어 저장 스키마 버전 갱신(v2).
+      name: "renewable-economics-store-v2",
     },
   ),
 );
 
-/** 스토어에서 엔진 컨텍스트를 조립. */
+/** 스토어에서 엔진 컨텍스트를 조립. 용도+면적 프로젝트를 베이스라인으로 파생. */
 export function selectContext(s: AppState): EngineContext {
-  return { tariffs: s.tariffs, pv: s.pv, project: s.project };
+  return {
+    tariffs: s.tariffs,
+    pv: s.pv,
+    project: resolveProject(s.project, s.usageTable, s.tariffs),
+  };
 }
 
 export function selectProduct(s: AppState): FuelCellProduct | undefined {

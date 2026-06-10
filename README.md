@@ -27,9 +27,11 @@ npm run lint         # ESLint
 ```
 data/
   fuel-cell-products.json   # ★ 연료전지 제품 마스터 (코드와 분리, 앱 내 CRUD)
-  tariffs.json              # 에너지 단가 (전기/가스/열)
+  building-usage.json       # 용도별 단위면적당 에너지사용량 테이블
+  tariffs.json              # 에너지 단가 (전기절감/전기비용/가스/열)
   pv-profile.json           # 태양광 가정
-  projects/goyang.json      # 프로젝트 가정 (고양창릉 프리셋)
+  projects/goyang.json          # 골든 테스트용 베이스라인 프리셋(원본 §4.4 4값)
+  projects/goyang-profile.json  # 라이브 앱 기본 프로젝트(용도+면적 기반)
 lib/engine/                 # 계산 엔진 (types/derive/profit/generation/finance)
 lib/                        # 포맷터, 시나리오 축, Zustand 스토어
 app/                        # matrix(메인)/products/assumptions/sensitivity/cases/report
@@ -43,6 +45,20 @@ tests/golden/               # 골든 테스트 (원본 엑셀 값, 상대오차 
 앱의 **제품 관리(`/products`)** 화면에서 행 추가/수정/삭제/복제 및 JSON
 가져오기/내보내기가 가능하다. 단가·태양광·프로젝트 가정도 단일 JSON으로 분리되어
 **가정값(`/assumptions`)** 화면에서 편집한다. 모든 편집값은 localStorage에 저장된다.
+
+### 프로젝트 가정 — 용도·면적 기반
+
+프로젝트의 전기 베이스라인은 **용도 선택 + 면적 입력**으로 산출한다.
+
+```
+총 에너지사용량(kWh/년) = 면적(㎡) × 단위면적당 에너지사용량(용도별, building-usage.json)
+전기비용(₩/년)          = 총 에너지사용량 × 전기비용 단가(tariffs.elecCostKrwPerKwh)
+```
+
+용도 테이블(`building-usage.json`)과 전기비용 단가는 코드와 분리되어 있다.
+오피스/오피스텔 각각 용도·면적을 지정하며, "오피스텔 포함" 토글 시 합산된다.
+기본 프로필(`goyang-profile.json`)은 업무 용도·전기비용 단가 142.3333₩/kWh로
+원본 고양창릉 베이스라인(오피스 333,082,152.76₩ / 2,340,155.64kWh)을 그대로 재현한다.
 
 ## 계산 검증
 

@@ -2,7 +2,72 @@
 
 import { useAppStore } from "@/lib/store";
 import { useHydrated } from "@/lib/useHydrated";
-import type { PvProfile, Project, Tariffs } from "@/lib/engine";
+import { deriveUsage, type ProjectProfile, type PvProfile, type Tariffs } from "@/lib/engine";
+import { formatKrw, formatNumber } from "@/lib/format";
+
+function UsageBlock({
+  title,
+  usageType,
+  areaM2,
+  usageTable,
+  derived,
+  onUsageType,
+  onArea,
+}: {
+  title: string;
+  usageType: string;
+  areaM2: number;
+  usageTable: import("@/lib/engine").BuildingUsageTable;
+  derived: ReturnType<typeof deriveUsage>;
+  onUsageType: (v: string) => void;
+  onArea: (v: number) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <h3 className="mb-3 text-sm font-semibold text-gray-800">{title}</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col text-xs text-gray-600">
+          용도
+          <select
+            className="mt-1 rounded border border-gray-300 px-2 py-1 text-sm"
+            value={usageType}
+            onChange={(e) => onUsageType(e.target.value)}
+          >
+            {usageTable.types.map((t) => (
+              <option key={t.name} value={t.name}>
+                {t.name} ({formatNumber(t.energyPerAreaKwh, 4)})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col text-xs text-gray-600">
+          면적(㎡)
+          <input
+            type="number"
+            min={0}
+            className="mt-1 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+            value={areaM2}
+            onChange={(e) => onArea(Number(e.target.value))}
+          />
+        </label>
+      </div>
+      <dl className="mt-3 space-y-1 border-t border-gray-200 pt-3 text-xs">
+        <div className="flex justify-between">
+          <dt className="text-gray-500">단위면적당 에너지사용량</dt>
+          <dd className="tabular-nums">{formatNumber(derived.energyPerAreaKwh, 4)} kWh/㎡·년</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-gray-500">총 에너지사용량</dt>
+          <dd className="font-medium tabular-nums">{formatNumber(derived.totalEnergyKwhPerYear)} kWh/년</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-gray-500">전기비용</dt>
+          <dd className="font-medium tabular-nums text-gray-900">{formatKrw(derived.elecCostKrwPerYear)} ₩/년</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
 
 function NumberField({
   label,
@@ -34,6 +99,7 @@ export default function AssumptionsPage() {
   const tariffs = useAppStore((s) => s.tariffs);
   const pv = useAppStore((s) => s.pv);
   const project = useAppStore((s) => s.project);
+  const usageTable = useAppStore((s) => s.usageTable);
   const setTariffs = useAppStore((s) => s.setTariffs);
   const setPv = useAppStore((s) => s.setPv);
   const setProject = useAppStore((s) => s.setProject);
@@ -43,7 +109,10 @@ export default function AssumptionsPage() {
 
   const upT = (patch: Partial<Tariffs>) => setTariffs({ ...tariffs, ...patch });
   const upP = (patch: Partial<PvProfile>) => setPv({ ...pv, ...patch });
-  const upPr = (patch: Partial<Project>) => setProject({ ...project, ...patch });
+  const upPr = (patch: Partial<ProjectProfile>) => setProject({ ...project, ...patch });
+
+  const officeDerived = deriveUsage(project.officeAreaM2, project.officeUsageType, usageTable, tariffs.elecCostKrwPerKwh);
+  const officetelDerived = deriveUsage(project.officetelAreaM2, project.officetelUsageType, usageTable, tariffs.elecCostKrwPerKwh);
 
   return (
     <div className="space-y-6">
@@ -59,8 +128,9 @@ export default function AssumptionsPage() {
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
         <h2 className="mb-3 font-semibold">에너지 단가 (§4.2)</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <NumberField label="전기절감 단가(₩/kWh)" value={tariffs.elecSavingKrwPerKwh} onChange={(v) => upT({ elecSavingKrwPerKwh: v })} />
+          <NumberField label="전기비용 단가(₩/kWh)" value={tariffs.elecCostKrwPerKwh} onChange={(v) => upT({ elecCostKrwPerKwh: v })} hint="에너지사용량→전기비용 환산" />
           <NumberField label="가스비용 단가(₩/kWh)" value={tariffs.gasCostKrwPerKwh} onChange={(v) => upT({ gasCostKrwPerKwh: v })} />
           <NumberField label="열절감 단가(₩/kWh)" value={tariffs.heatSavingKrwPerKwh} onChange={(v) => upT({ heatSavingKrwPerKwh: v })} />
         </div>
@@ -82,21 +152,40 @@ export default function AssumptionsPage() {
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">프로젝트 가정 — {project.name} (§4.4)</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col text-xs text-gray-600">
-            프로젝트명
-            <input
-              className="mt-1 rounded border border-gray-300 px-2 py-1 text-sm"
-              value={project.name}
-              onChange={(e) => upPr({ name: e.target.value })}
-            />
-          </label>
-          <div />
-          <NumberField label="오피스 전기비용(₩/년)" value={project.officeElecCostKrwPerYear} onChange={(v) => upPr({ officeElecCostKrwPerYear: v })} />
-          <NumberField label="오피스텔 전기비용(₩/년)" value={project.officetelElecCostKrwPerYear} onChange={(v) => upPr({ officetelElecCostKrwPerYear: v })} />
-          <NumberField label="오피스 사용량(kWh/년)" value={project.officeUsageKwhPerYear} onChange={(v) => upPr({ officeUsageKwhPerYear: v })} />
-          <NumberField label="오피스텔 사용량(kWh/년)" value={project.officetelUsageKwhPerYear} onChange={(v) => upPr({ officetelUsageKwhPerYear: v })} />
+        <h2 className="mb-1 font-semibold">프로젝트 가정 — 용도 · 면적 기반</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          용도를 선택하고 면적을 입력하면 총 에너지사용량(= 면적 × 단위면적당 에너지사용량)과
+          전기비용(= 총 에너지사용량 × 전기비용 단가)이 자동 산출됩니다.
+        </p>
+
+        <label className="flex max-w-xs flex-col text-xs text-gray-600">
+          프로젝트명
+          <input
+            className="mt-1 rounded border border-gray-300 px-2 py-1 text-sm"
+            value={project.name}
+            onChange={(e) => upPr({ name: e.target.value })}
+          />
+        </label>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <UsageBlock
+            title="오피스"
+            usageType={project.officeUsageType}
+            areaM2={project.officeAreaM2}
+            usageTable={usageTable}
+            derived={officeDerived}
+            onUsageType={(v) => upPr({ officeUsageType: v })}
+            onArea={(v) => upPr({ officeAreaM2: v })}
+          />
+          <UsageBlock
+            title="오피스텔 (오피스텔 포함 토글 시 합산)"
+            usageType={project.officetelUsageType}
+            areaM2={project.officetelAreaM2}
+            usageTable={usageTable}
+            derived={officetelDerived}
+            onUsageType={(v) => upPr({ officetelUsageType: v })}
+            onArea={(v) => upPr({ officetelAreaM2: v })}
+          />
         </div>
       </section>
 

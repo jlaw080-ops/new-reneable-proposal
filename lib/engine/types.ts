@@ -21,9 +21,36 @@ export interface FuelCellProduct {
 /** 에너지 단가 (§4.2). */
 export interface Tariffs {
   elecSavingKrwPerKwh: number;
+  /** 건물 전기비용 단가 — 에너지사용량(kWh)을 전기비용(₩)으로 환산. */
+  elecCostKrwPerKwh: number;
   gasCostKrwPerKwh: number;
   heatSavingKrwPerKwh: number;
   note?: string;
+}
+
+/** 용도별 단위면적당 에너지사용량 한 행. */
+export interface BuildingUsageType {
+  name: string; // 용도 (예: 업무, 의료, 판매)
+  energyPerAreaKwh: number; // 단위면적당 에너지사용량 (kWh/㎡·년)
+}
+
+/** 용도 테이블. 코드와 분리된 데이터로 관리. */
+export interface BuildingUsageTable {
+  unit?: string;
+  note?: string;
+  types: BuildingUsageType[];
+}
+
+/**
+ * 프로젝트 가정 — 용도 선택 + 면적 입력 기반 (사용자 요구 반영).
+ * 오피스/오피스텔 각각 용도와 면적을 입력하면 총 에너지사용량과 전기비용이 파생된다.
+ */
+export interface ProjectProfile {
+  name: string;
+  officeUsageType: string; // 용도
+  officeAreaM2: number; // 면적(㎡)
+  officetelUsageType: string;
+  officetelAreaM2: number;
 }
 
 /** 태양광 가정 (§4.3). */

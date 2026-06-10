@@ -75,6 +75,12 @@ export default function ReportPage() {
               <RowKV k="연료전지 기수" v={`${baseInput.fcUnits} 기`} />
               <RowKV k="태양광 용량" v={`${formatNumber(baseInput.pvCapacityKw)} kW (설치면적 ${formatNumber(baseInput.pvCapacityKw * 5)}㎡)`} />
               <RowKV k="열사용비율 / 이용률" v={`${formatPercent(baseInput.heatUseRatio)} / ${formatPercent(baseInput.utilization ?? 1)}`} />
+              <RowKV
+                k="대상 건물 용도 / 면적"
+                v={`오피스 ${project.officeUsageType} ${formatNumber(project.officeAreaM2)}㎡${
+                  baseInput.includeOfficetel ? ` + 오피스텔 ${project.officetelUsageType} ${formatNumber(project.officetelAreaM2)}㎡` : ""
+                }`}
+              />
               <RowKV k="오피스텔 포함 여부" v={baseInput.includeOfficetel ? "포함" : "미포함"} />
             </tbody>
           </table>
@@ -87,6 +93,8 @@ export default function ReportPage() {
               <RowKV k="전기절감 단가" v={`${formatNumber(tariffs.elecSavingKrwPerKwh, 4)} ₩/kWh`} />
               <RowKV k="가스비용 단가" v={`${formatNumber(tariffs.gasCostKrwPerKwh, 4)} ₩/kWh`} />
               <RowKV k="열절감 단가" v={`${formatNumber(tariffs.heatSavingKrwPerKwh, 2)} ₩/kWh`} />
+              <RowKV k="전기비용 단가" v={`${formatNumber(tariffs.elecCostKrwPerKwh, 4)} ₩/kWh`} />
+              <RowKV k="대상 전기비용 기준" v={`${formatKrw(result.baseline)} ₩/년 (사용량 ${formatNumber(result.baselineUsageKwh)} kWh)`} />
               <RowKV k="태양광 전기절감" v={`${formatKrw(pv.elecSavingKrwPerKwYear)} ₩/kW·년`} />
               <RowKV k="태양광 발전량" v={`${formatNumber(pv.generationKwhPerKwYear, 1)} kWh/kW·년`} />
             </tbody>

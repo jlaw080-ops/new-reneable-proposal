@@ -1,6 +1,7 @@
 {
   "elecSavingKrwPerKwh": 185.0237764,
+  "elecCostKrwPerKwh": 142.33333333,
   "gasCostKrwPerKwh": 68.60623,
   "heatSavingKrwPerKwh": 86.0,
-  "note": "역산 검증값. 원본 '요금조건' 시트 확인 후 갱신 가능"
+  "note": "역산 검증값. 원본 '요금조건' 시트 확인 후 갱신 가능. elecCostKrwPerKwh = 건물 전기비용 단가(에너지사용량→전기비용 환산), goyang 333082152.76/2340155.64 = 142.3333."
 }
