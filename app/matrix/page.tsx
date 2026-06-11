@@ -7,9 +7,9 @@ import { useHydrated } from "@/lib/useHydrated";
 import type { ScenarioInput } from "@/lib/engine";
 import {
   DEFAULT_PV_AXIS,
-  DEFAULT_UNIT_AXIS,
   METRIC_LABELS,
   areaForPv,
+  buildUnitAxis,
   computeMatrix,
   metricIsGood,
   type MatrixCell,
@@ -70,9 +70,14 @@ export default function MatrixPage() {
     [scenario.heatUseRatio, scenario.includeHeatSaving, scenario.utilization],
   );
 
+  const unitAxis = useMemo(
+    () => buildUnitAxis(scenario.maxFcUnits, scenario.fcUnitStep),
+    [scenario.maxFcUnits, scenario.fcUnitStep],
+  );
+
   const matrix = useMemo(
-    () => (product ? computeMatrix(product, baseInput, ctx, DEFAULT_UNIT_AXIS, DEFAULT_PV_AXIS) : []),
-    [product, baseInput, ctx],
+    () => (product ? computeMatrix(product, baseInput, ctx, unitAxis, DEFAULT_PV_AXIS) : []),
+    [product, baseInput, ctx, unitAxis],
   );
 
   if (!hydrated) return <div className="text-gray-500">불러오는 중…</div>;
@@ -95,18 +100,43 @@ export default function MatrixPage() {
         </div>
       )}
 
-      <div className="no-print flex flex-wrap gap-2">
-        {METRICS.map((m) => (
-          <button
-            key={m}
-            onClick={() => setMetric(m)}
-            className={`rounded px-3 py-1.5 text-sm ${
-              metric === m ? "bg-gray-900 text-white" : "bg-white text-gray-700 border border-gray-300"
-            }`}
-          >
-            {METRIC_LABELS[m]}
-          </button>
-        ))}
+      <div className="no-print flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {METRICS.map((m) => (
+            <button
+              key={m}
+              onClick={() => setMetric(m)}
+              className={`rounded px-3 py-1.5 text-sm ${
+                metric === m ? "bg-gray-900 text-white" : "bg-white text-gray-700 border border-gray-300"
+              }`}
+            >
+              {METRIC_LABELS[m]}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-end gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+          <label className="flex flex-col text-xs text-gray-600">
+            연료전지 최대 대수
+            <input
+              type="number"
+              min={1}
+              value={scenario.maxFcUnits}
+              onChange={(e) => scenario.setMaxFcUnits(Math.max(1, Math.floor(Number(e.target.value))))}
+              className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            표시 간격(대)
+            <input
+              type="number"
+              min={1}
+              value={scenario.fcUnitStep}
+              onChange={(e) => scenario.setFcUnitStep(Math.max(1, Math.floor(Number(e.target.value))))}
+              className="mt-1 w-20 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+            />
+          </label>
+          <span className="pb-1 text-xs text-gray-400">{unitAxis.length}행</span>
+        </div>
       </div>
 
       <p className="text-xs text-gray-500">
@@ -134,10 +164,10 @@ export default function MatrixPage() {
             </tr>
           </thead>
           <tbody>
-            {matrix.map((row, ri) => (
-              <tr key={DEFAULT_UNIT_AXIS[ri]}>
+            {matrix.map((row) => (
+              <tr key={row[0]?.fcUnits}>
                 <th className="sticky left-0 z-10 bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-700">
-                  {DEFAULT_UNIT_AXIS[ri]}
+                  {row[0]?.fcUnits}
                 </th>
                 {row.map((c) => {
                   const isBase =

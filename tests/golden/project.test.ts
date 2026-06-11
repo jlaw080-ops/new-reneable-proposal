@@ -1,6 +1,7 @@
 // 프로젝트 가정 파생 테스트 — 용도+면적 → 에너지사용량 → 전기비용
 import { describe, expect, it } from "vitest";
 import { deriveUsage, energyPerArea, resolveProject } from "@/lib/engine";
+import { buildUnitAxis } from "@/lib/scenario";
 import type { BuildingUsageTable, ProjectProfile, Tariffs } from "@/lib/engine";
 import usage from "@/data/building-usage.json";
 import tariffs from "@/data/tariffs.json";
@@ -8,6 +9,23 @@ import profile from "@/data/projects/goyang-profile.json";
 
 const table = usage as BuildingUsageTable;
 const t = tariffs as Tariffs;
+
+describe("buildUnitAxis — 기수 축 생성 (최대 대수 / 표시 간격)", () => {
+  it("0부터 max까지 step 간격, 양끝 포함", () => {
+    expect(buildUnitAxis(100, 5)).toEqual([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]);
+    expect(buildUnitAxis(20, 10)).toEqual([0, 10, 20]);
+  });
+  it("max가 step 배수가 아니면 마지막에 max 포함", () => {
+    expect(buildUnitAxis(23, 10)).toEqual([0, 10, 20, 23]);
+  });
+  it("step은 1 이상 정수로 강제", () => {
+    expect(buildUnitAxis(3, 0)).toEqual([0, 1, 2, 3]);
+    expect(buildUnitAxis(3, 1)).toEqual([0, 1, 2, 3]);
+  });
+  it("행 폭주 방지 상한(200행) 적용", () => {
+    expect(buildUnitAxis(100000, 1).length).toBeLessThanOrEqual(200);
+  });
+});
 
 describe("energyPerArea", () => {
   it("용도별 단위면적당 에너지사용량 조회", () => {

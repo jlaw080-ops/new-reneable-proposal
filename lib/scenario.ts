@@ -7,8 +7,30 @@ import type {
 } from "./engine";
 import { computeScenario } from "./engine";
 
-/** 기수 축 기본값 [0,1,5,10,…,100]. */
+/** 기수 축 기본값 [0,1,5,10,…,100]. (참고용 — 실제 축은 buildUnitAxis 로 생성) */
 export const DEFAULT_UNIT_AXIS = [0, 1, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100];
+
+/** 기수 축 기본 최대 대수 / 표시 간격. */
+export const DEFAULT_MAX_FC_UNITS = 100;
+export const DEFAULT_FC_UNIT_STEP = 5;
+
+/** 매트릭스 행 폭주 방지용 상한. */
+export const MAX_UNIT_AXIS_ROWS = 200;
+
+/**
+ * 연료전지 기수 축 생성: 0부터 maxUnits 까지 step 간격 (양끝 포함).
+ * step 은 1 이상 정수, maxUnits 가 step 의 배수가 아니어도 마지막에 maxUnits 를 포함한다.
+ */
+export function buildUnitAxis(maxUnits: number, step: number): number[] {
+  const m = Math.max(0, Math.floor(maxUnits));
+  const s = Math.max(1, Math.floor(step));
+  const axis: number[] = [];
+  for (let u = 0; u <= m && axis.length < MAX_UNIT_AXIS_ROWS; u += s) axis.push(u);
+  if (axis.length > 0 && axis[axis.length - 1] !== m && axis.length < MAX_UNIT_AXIS_ROWS) {
+    axis.push(m);
+  }
+  return axis.length > 0 ? axis : [0];
+}
 
 /** 태양광 용량 축 600~3,200kW (400 간격 8단계). */
 export const DEFAULT_PV_AXIS = [600, 1000, 1400, 1800, 2200, 2600, 3000, 3200];

@@ -11,11 +11,16 @@ export interface ScenarioState {
   /** 기준 Case 강조용 (매트릭스 주황 테두리). */
   baseFcUnits: number;
   basePvCapacityKw: number;
+  /** 기수 축 설정 — 최대 설치대수 / 표시 간격. */
+  maxFcUnits: number;
+  fcUnitStep: number;
 
   setHeatUseRatio: (v: number) => void;
   setIncludeHeatSaving: (v: boolean) => void;
   setUtilization: (v: number) => void;
   setBaseCase: (fc: number, pv: number) => void;
+  setMaxFcUnits: (v: number) => void;
+  setFcUnitStep: (v: number) => void;
 }
 
 export const useScenarioStore = create<ScenarioState>()(
@@ -26,13 +31,17 @@ export const useScenarioStore = create<ScenarioState>()(
       utilization: 1,
       baseFcUnits: 1,
       basePvCapacityKw: 600,
+      maxFcUnits: 100,
+      fcUnitStep: 5,
 
       setHeatUseRatio: (heatUseRatio) => set({ heatUseRatio }),
       setIncludeHeatSaving: (includeHeatSaving) => set({ includeHeatSaving }),
       setUtilization: (utilization) => set({ utilization }),
       setBaseCase: (baseFcUnits, basePvCapacityKw) =>
         set({ baseFcUnits, basePvCapacityKw }),
+      setMaxFcUnits: (maxFcUnits) => set({ maxFcUnits }),
+      setFcUnitStep: (fcUnitStep) => set({ fcUnitStep }),
     }),
-    { name: "renewable-scenario-store-v2" },
+    { name: "renewable-scenario-store-v3" },
   ),
 );
