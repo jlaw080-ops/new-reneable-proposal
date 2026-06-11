@@ -6,12 +6,13 @@ import { useScenarioStore } from "@/lib/scenarioStore";
 import { useHydrated } from "@/lib/useHydrated";
 import type { ScenarioInput } from "@/lib/engine";
 import {
-  DEFAULT_PV_AXIS,
   METRIC_LABELS,
   areaForPv,
+  buildPvAxis,
   buildUnitAxis,
   computeMatrix,
   metricIsGood,
+  snapPvCapacity,
   type MatrixCell,
   type MatrixMetric,
 } from "@/lib/scenario";
@@ -74,10 +75,14 @@ export default function MatrixPage() {
     () => buildUnitAxis(scenario.maxFcUnits, scenario.fcUnitStep),
     [scenario.maxFcUnits, scenario.fcUnitStep],
   );
+  const pvAxis = useMemo(
+    () => buildPvAxis(scenario.minPvCapacityKw, scenario.maxPvCapacityKw, scenario.pvCapacityStep),
+    [scenario.minPvCapacityKw, scenario.maxPvCapacityKw, scenario.pvCapacityStep],
+  );
 
   const matrix = useMemo(
-    () => (product ? computeMatrix(product, baseInput, ctx, unitAxis, DEFAULT_PV_AXIS) : []),
-    [product, baseInput, ctx, unitAxis],
+    () => (product ? computeMatrix(product, baseInput, ctx, unitAxis, pvAxis) : []),
+    [product, baseInput, ctx, unitAxis, pvAxis],
   );
 
   if (!hydrated) return <div className="text-gray-500">불러오는 중…</div>;
@@ -114,28 +119,66 @@ export default function MatrixPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-end gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
-          <label className="flex flex-col text-xs text-gray-600">
-            연료전지 최대 대수
-            <input
-              type="number"
-              min={1}
-              value={scenario.maxFcUnits}
-              onChange={(e) => scenario.setMaxFcUnits(Math.max(1, Math.floor(Number(e.target.value))))}
-              className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            표시 간격(대)
-            <input
-              type="number"
-              min={1}
-              value={scenario.fcUnitStep}
-              onChange={(e) => scenario.setFcUnitStep(Math.max(1, Math.floor(Number(e.target.value))))}
-              className="mt-1 w-20 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
-            />
-          </label>
-          <span className="pb-1 text-xs text-gray-400">{unitAxis.length}행</span>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex items-end gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+            <label className="flex flex-col text-xs text-gray-600">
+              연료전지 최대 대수
+              <input
+                type="number"
+                min={1}
+                value={scenario.maxFcUnits}
+                onChange={(e) => scenario.setMaxFcUnits(Math.max(1, Math.floor(Number(e.target.value))))}
+                className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <label className="flex flex-col text-xs text-gray-600">
+              표시 간격(대)
+              <input
+                type="number"
+                min={1}
+                value={scenario.fcUnitStep}
+                onChange={(e) => scenario.setFcUnitStep(Math.max(1, Math.floor(Number(e.target.value))))}
+                className="mt-1 w-20 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <span className="pb-1 text-xs text-gray-400">{unitAxis.length}행</span>
+          </div>
+          <div className="flex items-end gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+            <label className="flex flex-col text-xs text-gray-600">
+              태양광 최소(kW)
+              <input
+                type="number"
+                min={50}
+                step={50}
+                value={scenario.minPvCapacityKw}
+                onChange={(e) => scenario.setMinPvCapacityKw(snapPvCapacity(Number(e.target.value)))}
+                className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <label className="flex flex-col text-xs text-gray-600">
+              태양광 최대(kW)
+              <input
+                type="number"
+                min={50}
+                step={50}
+                value={scenario.maxPvCapacityKw}
+                onChange={(e) => scenario.setMaxPvCapacityKw(snapPvCapacity(Number(e.target.value)))}
+                className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <label className="flex flex-col text-xs text-gray-600">
+              설치 단위(kW)
+              <input
+                type="number"
+                min={50}
+                step={50}
+                value={scenario.pvCapacityStep}
+                onChange={(e) => scenario.setPvCapacityStep(snapPvCapacity(Number(e.target.value)))}
+                className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <span className="pb-1 text-xs text-gray-400">{pvAxis.length}열</span>
+          </div>
         </div>
       </div>
 
@@ -155,7 +198,7 @@ export default function MatrixPage() {
               <th className="sticky left-0 z-10 bg-gray-100 px-2 py-2 text-xs font-semibold text-gray-700">
                 기수 \ 태양광(kW)
               </th>
-              {DEFAULT_PV_AXIS.map((pv) => (
+              {pvAxis.map((pv) => (
                 <th key={pv} className="bg-gray-100 px-2 py-2 text-xs font-semibold text-gray-700">
                   {formatNumber(pv)}
                   <div className="font-normal text-gray-400">{formatNumber(areaForPv(pv))}㎡</div>

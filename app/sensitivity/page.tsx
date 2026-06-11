@@ -17,7 +17,7 @@ import { useHydrated } from "@/lib/useHydrated";
 import { computeScenario, type ScenarioInput } from "@/lib/engine";
 import {
   DEFAULT_HEAT_RATIO_AXIS,
-  DEFAULT_PV_AXIS,
+  buildPvAxis,
   buildUnitAxis,
 } from "@/lib/scenario";
 import { formatMillion, formatPercent } from "@/lib/format";
@@ -56,7 +56,10 @@ export default function SensitivityPage() {
 
   const grid2d = useMemo(() => {
     if (!product) return { cols: [] as number[], rows: [] as { ratio: number; cells: number[] }[] };
-    const cols = axis2d === "units" ? buildUnitAxis(scenario.maxFcUnits, scenario.fcUnitStep) : DEFAULT_PV_AXIS;
+    const cols =
+      axis2d === "units"
+        ? buildUnitAxis(scenario.maxFcUnits, scenario.fcUnitStep)
+        : buildPvAxis(scenario.minPvCapacityKw, scenario.maxPvCapacityKw, scenario.pvCapacityStep);
     const rows = DEFAULT_HEAT_RATIO_AXIS.map((ratio) => ({
       ratio,
       cells: cols.map((c) => {
@@ -65,7 +68,17 @@ export default function SensitivityPage() {
       }),
     }));
     return { cols, rows };
-  }, [product, base, ctx, axis2d, scenario.maxFcUnits, scenario.fcUnitStep]);
+  }, [
+    product,
+    base,
+    ctx,
+    axis2d,
+    scenario.maxFcUnits,
+    scenario.fcUnitStep,
+    scenario.minPvCapacityKw,
+    scenario.maxPvCapacityKw,
+    scenario.pvCapacityStep,
+  ]);
 
   if (!hydrated) return <div className="text-gray-500">불러오는 중…</div>;
   if (!product) return <div className="text-loss">선택된 제품이 없습니다.</div>;

@@ -1,7 +1,7 @@
 // 프로젝트 가정 파생 테스트 — 용도+면적 → 에너지사용량 → 전기비용
 import { describe, expect, it } from "vitest";
 import { deriveUsage, energyPerArea, resolveProject } from "@/lib/engine";
-import { buildUnitAxis } from "@/lib/scenario";
+import { buildPvAxis, buildUnitAxis, snapPvCapacity } from "@/lib/scenario";
 import type { BuildingUsageTable, ProjectProfile, Tariffs } from "@/lib/engine";
 import usage from "@/data/building-usage.json";
 import tariffs from "@/data/tariffs.json";
@@ -24,6 +24,34 @@ describe("buildUnitAxis — 기수 축 생성 (최대 대수 / 표시 간격)", 
   });
   it("행 폭주 방지 상한(200행) 적용", () => {
     expect(buildUnitAxis(100000, 1).length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe("snapPvCapacity — 50kW 단위 스냅(최소 50)", () => {
+  it("50 단위로 반올림, 최소 50", () => {
+    expect(snapPvCapacity(0)).toBe(50);
+    expect(snapPvCapacity(30)).toBe(50);
+    expect(snapPvCapacity(74)).toBe(50);
+    expect(snapPvCapacity(75)).toBe(100);
+    expect(snapPvCapacity(420)).toBe(400);
+  });
+});
+
+describe("buildPvAxis — 태양광 용량 축 생성 (최소~최대 / 50 단위)", () => {
+  it("기본값(600~3200, 400)이 기존 축 재현", () => {
+    expect(buildPvAxis(600, 3200, 400)).toEqual([600, 1000, 1400, 1800, 2200, 2600, 3000, 3200]);
+  });
+  it("최소~최대 step 간격, 양끝 포함", () => {
+    expect(buildPvAxis(50, 250, 50)).toEqual([50, 100, 150, 200, 250]);
+  });
+  it("간격은 50kW 단위로 스냅", () => {
+    expect(buildPvAxis(100, 400, 130)).toEqual([100, 250, 400]); // 130→150 스냅
+  });
+  it("최대가 간격 배수가 아니면 마지막에 최대 포함", () => {
+    expect(buildPvAxis(100, 330, 100)).toEqual([100, 200, 300, 330]);
+  });
+  it("열 폭주 방지 상한(40열) 적용", () => {
+    expect(buildPvAxis(50, 1000000, 50).length).toBeLessThanOrEqual(40);
   });
 });
 
