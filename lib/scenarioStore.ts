@@ -18,6 +18,9 @@ export interface ScenarioState {
   minPvCapacityKw: number;
   maxPvCapacityKw: number;
   pvCapacityStep: number;
+  /** 열사용비율 매트릭스 설정 — 고정 태양광 용량(kW) / 열사용비율 표시 간격(%). */
+  heatMatrixPvKw: number;
+  heatRatioStepPct: number;
 
   setHeatUseRatio: (v: number) => void;
   setIncludeHeatSaving: (v: boolean) => void;
@@ -28,6 +31,8 @@ export interface ScenarioState {
   setMinPvCapacityKw: (v: number) => void;
   setMaxPvCapacityKw: (v: number) => void;
   setPvCapacityStep: (v: number) => void;
+  setHeatMatrixPvKw: (v: number) => void;
+  setHeatRatioStepPct: (v: number) => void;
 }
 
 export const useScenarioStore = create<ScenarioState>()(
@@ -43,6 +48,8 @@ export const useScenarioStore = create<ScenarioState>()(
       minPvCapacityKw: 600,
       maxPvCapacityKw: 3200,
       pvCapacityStep: 400,
+      heatMatrixPvKw: 700,
+      heatRatioStepPct: 5,
 
       setHeatUseRatio: (heatUseRatio) => set({ heatUseRatio }),
       setIncludeHeatSaving: (includeHeatSaving) => set({ includeHeatSaving }),
@@ -54,7 +61,9 @@ export const useScenarioStore = create<ScenarioState>()(
       setMinPvCapacityKw: (minPvCapacityKw) => set({ minPvCapacityKw }),
       setMaxPvCapacityKw: (maxPvCapacityKw) => set({ maxPvCapacityKw }),
       setPvCapacityStep: (pvCapacityStep) => set({ pvCapacityStep }),
+      setHeatMatrixPvKw: (heatMatrixPvKw) => set({ heatMatrixPvKw }),
+      setHeatRatioStepPct: (heatRatioStepPct) => set({ heatRatioStepPct }),
     }),
-    { name: "renewable-scenario-store-v4" },
+    { name: "renewable-scenario-store-v5" },
   ),
 );

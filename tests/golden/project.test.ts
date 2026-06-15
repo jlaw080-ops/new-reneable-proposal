@@ -1,7 +1,7 @@
 // 프로젝트 가정 파생 테스트 — 용도+면적 → 에너지사용량 → 전기비용
 import { describe, expect, it } from "vitest";
 import { deriveUsage, energyPerArea, resolveProject } from "@/lib/engine";
-import { buildPvAxis, buildUnitAxis, snapPvCapacity } from "@/lib/scenario";
+import { buildHeatRatioAxis, buildPvAxis, buildUnitAxis, snapPvCapacity } from "@/lib/scenario";
 import type { BuildingUsageTable, ProjectProfile, Tariffs } from "@/lib/engine";
 import usage from "@/data/building-usage.json";
 import tariffs from "@/data/tariffs.json";
@@ -52,6 +52,25 @@ describe("buildPvAxis — 태양광 용량 축 생성 (최소~최대 / 50 단위
   });
   it("열 폭주 방지 상한(40열) 적용", () => {
     expect(buildPvAxis(50, 1000000, 50).length).toBeLessThanOrEqual(40);
+  });
+});
+
+describe("buildHeatRatioAxis — 열사용비율 축 (0~100%, 간격 조정)", () => {
+  it("기본 5% → 21열 (0,0.05,…,1.0)", () => {
+    const a = buildHeatRatioAxis(5);
+    expect(a.length).toBe(21);
+    expect(a[0]).toBeCloseTo(0, 9);
+    expect(a[a.length - 1]).toBeCloseTo(1, 9);
+  });
+  it("10% → 11열", () => {
+    expect(buildHeatRatioAxis(10).length).toBe(11);
+  });
+  it("간격이 100 약수가 아니면 마지막에 100% 포함", () => {
+    const a = buildHeatRatioAxis(30); // 0,30,60,90,100
+    expect(a.map((r) => Math.round(r * 100))).toEqual([0, 30, 60, 90, 100]);
+  });
+  it("step은 1 이상 정수로 강제", () => {
+    expect(buildHeatRatioAxis(0).length).toBe(101);
   });
 });
 

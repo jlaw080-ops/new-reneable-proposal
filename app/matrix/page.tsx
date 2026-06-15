@@ -8,15 +8,17 @@ import type { ScenarioInput } from "@/lib/engine";
 import {
   METRIC_LABELS,
   areaForPv,
+  buildHeatRatioAxis,
   buildPvAxis,
   buildUnitAxis,
+  computeHeatRatioMatrix,
   computeMatrix,
   metricIsGood,
   snapPvCapacity,
   type MatrixCell,
   type MatrixMetric,
 } from "@/lib/scenario";
-import { formatMillion, formatNumber, formatPayback } from "@/lib/format";
+import { formatMillion, formatNumber, formatPayback, formatPercent } from "@/lib/format";
 import { ScenarioControls } from "@/components/ScenarioControls";
 import { CellBreakdown } from "@/components/CellBreakdown";
 import { missingCostFields } from "@/lib/engine";
@@ -57,7 +59,7 @@ export default function MatrixPage() {
   const ctx = useAppStore(selectContext);
   const scenario = useScenarioStore();
   const [metric, setMetric] = useState<MatrixMetric>("annualNetProfit");
-  const [selected, setSelected] = useState<{ fc: number; pv: number } | null>(null);
+  const [selected, setSelected] = useState<{ fc: number; pv: number; ratio?: number } | null>(null);
 
   const baseInput: ScenarioInput = useMemo(
     () => ({
@@ -83,6 +85,18 @@ export default function MatrixPage() {
   const matrix = useMemo(
     () => (product ? computeMatrix(product, baseInput, ctx, unitAxis, pvAxis) : []),
     [product, baseInput, ctx, unitAxis, pvAxis],
+  );
+
+  const heatRatioAxis = useMemo(
+    () => buildHeatRatioAxis(scenario.heatRatioStepPct),
+    [scenario.heatRatioStepPct],
+  );
+  const heatMatrix = useMemo(
+    () =>
+      product
+        ? computeHeatRatioMatrix(product, baseInput, ctx, unitAxis, heatRatioAxis, scenario.heatMatrixPvKw)
+        : [],
+    [product, baseInput, ctx, unitAxis, heatRatioAxis, scenario.heatMatrixPvKw],
   );
 
   if (!hydrated) return <div className="text-gray-500">불러오는 중…</div>;
@@ -233,11 +247,98 @@ export default function MatrixPage() {
         </table>
       </div>
 
+      {/* ── 두 번째 매트릭스: 태양광 고정 × (연료전지 대수 × 열사용비율) 연간순익 ── */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold">연료전지 대수 × 열사용비율 — 연간 순익</h2>
+            <p className="text-xs text-gray-500">
+              태양광 용량 고정 · 단위: 백만원 · 흑자=녹색, 적자=적색 · 셀 클릭 시 분해
+            </p>
+          </div>
+          <div className="no-print flex items-end gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+            <label className="flex flex-col text-xs text-gray-600">
+              고정 태양광(kW)
+              <input
+                type="number"
+                min={0}
+                step={50}
+                value={scenario.heatMatrixPvKw}
+                onChange={(e) => scenario.setHeatMatrixPvKw(Math.max(0, snapPvCapacity(Number(e.target.value))))}
+                className="mt-1 w-24 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <label className="flex flex-col text-xs text-gray-600">
+              열사용비율 간격(%)
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={scenario.heatRatioStepPct}
+                onChange={(e) =>
+                  scenario.setHeatRatioStepPct(Math.min(100, Math.max(1, Math.floor(Number(e.target.value)))))
+                }
+                className="mt-1 w-20 rounded border border-gray-300 px-2 py-1 text-sm tabular-nums"
+              />
+            </label>
+            <span className="pb-1 text-xs text-gray-400">{heatRatioAxis.length}열</span>
+          </div>
+        </div>
+
+        <div className="overflow-auto rounded-lg border border-gray-200 bg-white">
+          <table className="min-w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 bg-gray-100 px-2 py-2 text-xs font-semibold text-gray-700">
+                  기수 \ 열사용비율
+                </th>
+                {heatRatioAxis.map((r) => (
+                  <th key={r} className="bg-gray-100 px-2 py-2 text-xs font-semibold text-gray-700">
+                    {formatPercent(r, 0)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {heatMatrix.map((row) => (
+                <tr key={row[0]?.fcUnits}>
+                  <th className="sticky left-0 z-10 bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-700">
+                    {row[0]?.fcUnits}
+                  </th>
+                  {row.map((c) => {
+                    const isBase =
+                      c.fcUnits === scenario.baseFcUnits && scenario.heatMatrixPvKw === scenario.basePvCapacityKw;
+                    return (
+                      <td
+                        key={c.heatUseRatio}
+                        className={`matrix-cell cursor-pointer hover:opacity-80 ${
+                          c.result.annualNetProfit > 0 ? "bg-green-100 text-green-900" : "bg-red-100 text-red-900"
+                        } ${isBase ? "outline outline-2 -outline-offset-2 outline-orange-500" : ""}`}
+                        onClick={() => setSelected({ fc: c.fcUnits, pv: scenario.heatMatrixPvKw, ratio: c.heatUseRatio })}
+                      >
+                        {formatMillion(c.result.annualNetProfit)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       {selected && (
         <CellBreakdown
           product={product}
           ctx={ctx}
-          input={{ ...baseInput, fcUnits: selected.fc, pvCapacityKw: selected.pv }}
+          input={{
+            ...baseInput,
+            fcUnits: selected.fc,
+            pvCapacityKw: selected.pv,
+            ...(selected.ratio != null
+              ? { heatUseRatio: selected.ratio, includeHeatSaving: true }
+              : {}),
+          }}
           onClose={() => setSelected(null)}
         />
       )}

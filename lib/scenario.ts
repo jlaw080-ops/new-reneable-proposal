@@ -75,8 +75,28 @@ export function areaForPv(pvKw: number): number {
   return pvKw * AREA_PER_KW;
 }
 
-/** 열사용비율 축 0~100% step 5%. */
+/** 열사용비율 축 0~100% step 5%. (참고용 — 실제 축은 buildHeatRatioAxis 로 생성) */
 export const DEFAULT_HEAT_RATIO_AXIS = Array.from({ length: 21 }, (_, i) => i * 0.05);
+
+/** 열사용비율 축 기본 표시 간격(%). */
+export const DEFAULT_HEAT_RATIO_STEP_PCT = 5;
+
+/** 열사용비율 축 열 폭주 방지 상한. */
+export const MAX_HEAT_RATIO_COLS = 101;
+
+/**
+ * 열사용비율 축 생성: 0%~100% 를 stepPct(%) 간격으로 (양끝 포함, 비율 0~1 반환).
+ * stepPct 는 1 이상 정수.
+ */
+export function buildHeatRatioAxis(stepPct: number): number[] {
+  const s = Math.max(1, Math.floor(stepPct));
+  const axis: number[] = [];
+  for (let p = 0; p <= 100 && axis.length < MAX_HEAT_RATIO_COLS; p += s) axis.push(p / 100);
+  if (axis.length > 0 && Math.abs(axis[axis.length - 1] - 1) > 1e-9 && axis.length < MAX_HEAT_RATIO_COLS) {
+    axis.push(1);
+  }
+  return axis.length > 0 ? axis : [0];
+}
 
 export type MatrixMetric =
   | "annualNetProfit"
@@ -112,6 +132,37 @@ export function computeMatrix(
       fcUnits,
       pvCapacityKw,
       result: computeScenario(product, { ...baseInput, fcUnits, pvCapacityKw }, ctx),
+    })),
+  );
+}
+
+export interface HeatMatrixCell {
+  fcUnits: number;
+  heatUseRatio: number;
+  result: ScenarioResult;
+}
+
+/**
+ * 태양광 용량 고정 + (연료전지 대수 × 열사용비율) 연간순익 매트릭스.
+ * 열사용비율을 변화시키므로 열절감은 항상 포함(includeHeatSaving=true)한다.
+ */
+export function computeHeatRatioMatrix(
+  product: FuelCellProduct,
+  baseInput: ScenarioInput,
+  ctx: EngineContext,
+  unitAxis: number[],
+  ratioAxis: number[],
+  fixedPvKw: number,
+): HeatMatrixCell[][] {
+  return unitAxis.map((fcUnits) =>
+    ratioAxis.map((heatUseRatio) => ({
+      fcUnits,
+      heatUseRatio,
+      result: computeScenario(
+        product,
+        { ...baseInput, fcUnits, pvCapacityKw: fixedPvKw, heatUseRatio, includeHeatSaving: true },
+        ctx,
+      ),
     })),
   );
 }
