@@ -59,6 +59,7 @@ export default function MatrixPage() {
   const ctx = useAppStore(selectContext);
   const scenario = useScenarioStore();
   const [metric, setMetric] = useState<MatrixMetric>("annualNetProfit");
+  const [view, setView] = useState<"pv" | "heat">("pv");
   const [selected, setSelected] = useState<{ fc: number; pv: number; ratio?: number } | null>(null);
 
   const baseInput: ScenarioInput = useMemo(
@@ -119,7 +120,29 @@ export default function MatrixPage() {
         </div>
       )}
 
-      <div className="no-print flex flex-wrap items-end justify-between gap-2">
+      {/* 매트릭스 전환 탭 */}
+      <div className="no-print flex gap-1 border-b border-gray-200">
+        {([
+          ["pv", "대수 × 태양광 용량"],
+          ["heat", "대수 × 열사용비율"],
+        ] as const).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
+              view === v
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "pv" && (
+        <>
+          <div className="no-print flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-wrap gap-2">
           {METRICS.map((m) => (
             <button
@@ -246,8 +269,11 @@ export default function MatrixPage() {
           </tbody>
         </table>
       </div>
+        </>
+      )}
 
       {/* ── 두 번째 매트릭스: 태양광 고정 × (연료전지 대수 × 열사용비율) 연간순익 ── */}
+      {view === "heat" && (
       <section className="space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -326,6 +352,7 @@ export default function MatrixPage() {
           </table>
         </div>
       </section>
+      )}
 
       {selected && (
         <CellBreakdown
