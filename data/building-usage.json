@@ -1,0 +1,16 @@
+{
+  "unit": "kWh/㎡·년",
+  "note": "용도별 단위면적당 에너지사용량. 총 에너지사용량 = 면적(㎡) × 단위면적당 에너지사용량.",
+  "types": [
+    { "name": "평균", "energyPerAreaKwh": 120.8357 },
+    { "name": "교육연구", "energyPerAreaKwh": 70.2452 },
+    { "name": "문화및집회", "energyPerAreaKwh": 93.6215 },
+    { "name": "방송통신", "energyPerAreaKwh": 387.6279 },
+    { "name": "숙박", "energyPerAreaKwh": 149.3292 },
+    { "name": "업무", "energyPerAreaKwh": 114.4392 },
+    { "name": "의료", "energyPerAreaKwh": 223.0634 },
+    { "name": "1종근린", "energyPerAreaKwh": 138.1644 },
+    { "name": "2종근린", "energyPerAreaKwh": 134.6754 },
+    { "name": "판매", "energyPerAreaKwh": 186.1963 }
+  ]
+}
